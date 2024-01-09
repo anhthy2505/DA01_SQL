@@ -26,3 +26,34 @@ SELECT card_name, MAX(issued_amount) - MIN(issued_amount) AS difference
 FROM monthly_cards_issued
 GROUP BY card_name
 ORDER BY difference DESC;
+
+--ex8:
+SELECT manufacturer, COUNT(drug) AS drug_count, ABS(SUM(total_sales - cogs)) AS total_loss
+FROM pharmacy_sales
+WHERE total_sales - cogs <= 0
+GROUP BY manufacturer
+ORDER BY total_loss DESC;
+
+--ex9:
+SELECT * FROM Cinema
+WHERE id %2=1 and description != 'boring'
+ORDER BY rating DESC;
+
+--ex10: 
+SELECT teacher_id, COUNT(DISTINCT subject_id) AS cnt
+FROM Teacher
+GROUP BY teacher_id;
+
+--ex11: 
+SELECT user_id, COUNT(follower_id) AS followers_count
+FROM Followers
+GROUP BY user_id
+ORDER BY user_id;
+
+--ex12:
+SELECT class
+FROM Courses
+GROUP BY class
+HAVING COUNT(student) >=5;
+
+
