@@ -13,7 +13,7 @@ LEFT JOIN texts
   ON emails.email_id = texts.email_id
   AND texts.signup_action = 'Confirmed';
 
---ex3:
+--ex3: dạ em chưa làm ra TT, có đọc giải mà chưa hiểu lắm ạ
 
 
 --ex4: 
@@ -68,13 +68,79 @@ order by replacement_cost
 limit 1
 
 -- câu hỏi 2
-select 
-case 
-when replacement_cost between 9.99 and 19.99 then 'low'
-when replacement_cost between 20.00 and 24.99 then 'medium'
-when replacement_cost between 25.00 and 29.99 then 'high'
-end as category
-from film
-group by category
-having category = 'low'
-count(film_id) as low_count
+SELECT 
+CASE 
+WHEN replacement_cost BETWEEN 9.99 AND 19.99 THEN 'low'
+WHEN replacement_cost BETWEEN 20.00 AND 24.99 THEN 'medium'
+WHEN replacement_cost BETWEEN 25.00 AND 29.99 THEN 'high'
+END AS category,
+COUNT(film_id) AS count
+FROM film
+GROUP BY category
+ORDER BY count DESC
+LIMIT 1
+
+-- câu hỏi 3
+SELECT a.title, a.length DESC, c.name
+FROM public.film as a
+join public.film_category as b
+on a.film_id = b.film_id
+join public.category as c
+on b.category_id = c.category_id
+where c.name in ('Drama', 'Sports')
+limit 1
+
+-- câu hỏi 4:
+SELECT  c.name, count(a.film_id) AS film_count
+FROM public.film as a
+join public.film_category as b
+on a.film_id = b.film_id
+join public.category as c
+on b.category_id = c.category_id
+group by c.name
+order by film_count DESC
+LIMIT 1
+
+-- câu hỏi 5:
+select  a.first_name || ' ' || a.last_name as full_name,
+count(film_id) as film_count
+from actor as a
+join film_actor as b
+on a.actor_id = b.actor_id
+GROUP BY full_name
+order by film_count desc
+
+-- câu hỏi 6:
+select count(a.address_id)
+from address as a
+left join customer as c
+on a.address_id = c.address_id
+where c.customer_id is null
+
+-- câu hỏi 7:
+select ct.city, sum(p.amount) as amount_sum
+from payment as p
+join customer as c
+on p.customer_id = c.customer_id
+join address as a
+on c.address_id = a.address_id
+join city as ct
+on a.city_id =ct.city_id
+group by ct.city
+order by amount_sum desc
+limit 1
+
+-- câu hỏi 8: (đề phải là doanh thu thấp nhất đúng ko ạ)
+select ct.city || ',' || co.country as city_country, sum(p.amount) as amount_sum
+from payment as p
+join customer as c
+on p.customer_id = c.customer_id
+join address as a
+on c.address_id = a.address_id
+join city as ct
+on a.city_id =ct.city_id
+join country as co
+on ct.country_id = co.country_id
+group by city_country
+order by amount_sum 
+limit 1
