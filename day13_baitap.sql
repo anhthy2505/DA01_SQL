@@ -26,19 +26,15 @@ on p.page_id = k.page_id
 where k.page_id is null
 
 --ex5: 
-WITH users_june AS (
-    SELECT DISTINCT user_id
-    FROM user_actions
-    WHERE event_type IN ('sign-in', 'like', 'comment')
-    AND EXTRACT(MONTH FROM event_date) = 6
-    AND EXTRACT(YEAR FROM event_date) = 2022
-), users_july AS (
-    SELECT DISTINCT user_id
-    FROM user_actions
-    WHERE event_type IN ('sign-in', 'like', 'comment')
-    AND EXTRACT(MONTH FROM event_date) = 7
-    AND EXTRACT(YEAR FROM event_date) = 2022
-)
+WITH users_june AS (SELECT DISTINCT user_id FROM user_actions
+WHERE event_type IN ('sign-in', 'like', 'comment')
+AND EXTRACT(MONTH FROM event_date) = 6
+AND EXTRACT(YEAR FROM event_date) = 2022), 
+users_july AS (SELECT DISTINCT user_id FROM user_actions
+WHERE event_type IN ('sign-in', 'like', 'comment')
+AND EXTRACT(MONTH FROM event_date) = 7
+AND EXTRACT(YEAR FROM event_date) = 2022)
+
 SELECT 7 AS month, COUNT(DISTINCT uj.user_id) AS mau_count
 FROM users_june uj
 JOIN users_july ujl ON uj.user_id = ujl.user_id;
