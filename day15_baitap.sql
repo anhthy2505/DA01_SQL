@@ -29,3 +29,39 @@ FROM user_transactions) AS RankedTransactions
 WHERE rank = 1
 GROUP BY user_id, transaction_date
 ORDER BY transaction_date;
+
+--ex5: 
+SELECT  user_id, tweet_date,   
+  ROUND(AVG(tweet_count) OVER (PARTITION BY user_id ORDER BY tweet_date 
+      ROWS BETWEEN 2 PRECEDING AND CURRENT ROW),2) AS rolling_avg_3d
+FROM tweets;
+
+--ex6: 
+SELECT COUNT(*)
+FROM (SELECT *,
+LAG(transaction_timestamp) OVER (PARTITION BY merchant_id, credit_card_id, amount ORDER BY transaction_timestamp) AS previous_timestamp
+FROM transactions) AS subquery
+WHERE transaction_timestamp - previous_timestamp <= INTERVAL '10 minutes';
+
+--ex7: 
+SELECT category, product, total_spend
+FROM(SELECT category, product, 
+      SUM(spend) AS total_spend,
+      RANK() OVER (PARTITION BY category ORDER BY SUM(spend) DESC) as rank
+    FROM product_spend
+    WHERE extract(year from transaction_date) = 2022
+    GROUP BY category, product) AS ranked_products
+WHERE rank <= 2;
+
+--ex8: 
+with top_5 as (
+SELECT a.artist_name, DENSE_RANK() OVER (ORDER BY COUNT(*) DESC) as artist_rank
+FROM artists a
+JOIN songs s ON a.artist_id = s.artist_id
+JOIN global_song_rank gsr ON s.song_id = gsr.song_id
+WHERE gsr.rank <= 10
+GROUP BY a.artist_name)
+SELECT artist_name, artist_rank
+FROM top_5
+WHERE artist_rank <= 5;
+
