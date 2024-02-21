@@ -43,7 +43,7 @@ SET
   CONTACTLASTNAME = CONCAT(UPPER(LEFT(contactfullname, 1)), LOWER(SUBSTRING(contactfullname, 2, POSITION('-' IN contactfullname) - 2))),
   CONTACTFIRSTNAME = CONCAT(UPPER(SUBSTRING(contactfullname, POSITION('-' IN contactfullname) + 1, 1)), LOWER(SUBSTRING(contactfullname FROM POSITION('-' IN contactfullname) + 2)));
 
-/*Thêm cột QTR_ID, MONTH_ID, YEAR_ID lần lượt là Qúy, tháng, năm được lấy ra từ ORDERDATE */
+/*4. Thêm cột QTR_ID, MONTH_ID, YEAR_ID lần lượt là Qúy, tháng, năm được lấy ra từ ORDERDATE */
 ALTER TABLE SALES_DATASET_RFM_PRJ
 ADD COLUMN QTR_ID INT,
 ADD COLUMN MONTH_ID INT,
@@ -54,3 +54,46 @@ SET
   QTR_ID = EXTRACT(QUARTER FROM TO_TIMESTAMP(ORDERDATE, 'MM/DD/YYYY HH24:MI')),
   MONTH_ID = EXTRACT(MONTH FROM TO_TIMESTAMP(ORDERDATE, 'MM/DD/YYYY HH24:MI')),
   YEAR_ID = EXTRACT(YEAR FROM TO_TIMESTAMP(ORDERDATE, 'MM/DD/YYYY HH24:MI'));
+
+/*Hãy tìm outlier (nếu có) cho cột QUANTITYORDERED và hãy chọn cách xử lý cho bản ghi đó*/
+-- Sử dụng IQR/BOX PLOT tìm ra outlier
+WITH twt_min_max_value as(
+  SELECT
+    PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY quantityordered) AS Q1,
+    PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY quantityordered) AS Q3
+  FROM SALES_DATASET_RFM_PRJ
+),
+OutlierRange AS (
+  SELECT
+    Q1,
+    Q3,
+    (Q3 - Q1) * 1.5 AS IQR,
+    Q1 - (Q3 - Q1) * 1.5 AS Min_value
+    Q3 + (Q3 - Q1) * 1.5 AS Max_value
+  FROM twt_min_max_value
+)
+SELECT *
+FROM SALES_DATASET_RFM_PRJ, OutlierRange
+WHERE quantityordered < Min_value
+   OR quantityordered > Max_value;
+--cách 2: sử dụng Z-score = (users-avg)/stddev
+WITH cte AS(
+  SELECT
+    AVG(quantityordered) AS mean,
+    STDDEV(quantityordered) AS stddev
+  FROM SALES_DATASET_RFM_PRJ
+), ZScores AS (
+  SELECT
+    ordernumber,
+    quantityordered,
+    (quantityordered - mean) / stddev AS zscore
+  FROM SALES_DATASET_RFM_PRJ, Stats
+)
+SELECT *
+FROM cte
+WHERE ABS(zscore) > 3;
+
+/*6. khi làm sạch dữ liệu, hãy lưu vào bảng mới  tên là SALES_DATASET_RFM_PRJ_CLEAN*/
+CREATE TABLE SALES_DATASET_RFM_PRJ_CLEAN AS
+SELECT *
+FROM SALES_DATASET_RFM_PRJ;
